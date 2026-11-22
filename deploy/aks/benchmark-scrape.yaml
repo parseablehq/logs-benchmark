@@ -1,0 +1,17 @@
+# Scrape the writer and querier metrics from the harness namespace.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: logs-benchmark
+  namespace: logs-bench-monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - logs-bench-harness
+  selector:
+    matchLabels:
+      app: bench
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 5s

@@ -1,0 +1,70 @@
+# grafana-community/loki chart 18.15.1; Loki 3.7.8.
+# Single-binary, single-replica filesystem deployment used in the AKS run.
+deploymentMode: Monolithic
+
+loki:
+  image:
+    tag: "3.7.8"
+  auth_enabled: false
+  podLabels:
+    logs-benchmark.victoriametrics.com/system: loki
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  limits_config:
+    max_streams_per_user: 0
+    max_global_streams_per_user: 0
+    ingestion_rate_mb: 1024
+    ingestion_burst_size_mb: 2048
+
+singleBinary:
+  replicas: 1
+  nodeSelector:
+    workload: loki
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: loki
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: "7"
+      memory: 24Gi
+  persistence:
+    enabled: true
+    enableStatefulSetAutoDeletePVC: true
+    size: 500Gi
+    storageClass: logs-bench-premium-v2
+
+# The measured deployment contains only the monolithic Loki process.
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+gateway:
+  enabled: false
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+lokiCanary:
+  enabled: false
+sidecar:
+  rules:
+    enabled: false
+test:
+  enabled: false
+minio:
+  enabled: false

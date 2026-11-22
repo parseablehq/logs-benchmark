@@ -1,0 +1,24 @@
+# vm/victoria-logs-single chart 0.13.10; VictoriaLogs v1.53.0.
+server:
+  image:
+    tag: v1.53.0
+  podLabels:
+    logs-benchmark.victoriametrics.com/system: victorialogs
+  nodeSelector:
+    workload: victorialogs
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: victorialogs
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: "7"
+      memory: 24Gi
+  persistentVolume:
+    enabled: true
+    size: 500Gi
+    storageClassName: logs-bench-premium-v2
+
+vector:
+  enabled: false

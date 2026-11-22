@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: parseable
+  namespace: logs-bench-parseable
+  labels:
+    app.kubernetes.io/name: parseable
+    logs-benchmark.victoriametrics.com/system: parseable
+spec:
+  selector:
+    app.kubernetes.io/name: parseable
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: parseable
+  namespace: logs-bench-parseable
+spec:
+  serviceName: parseable
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: parseable
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: parseable
+        logs-benchmark.victoriametrics.com/system: parseable
+    spec:
+      nodeSelector:
+        workload: parseable
+      tolerations:
+        - key: workload
+          operator: Equal
+          value: parseable
+          effect: NoSchedule
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: parseable
+          image: quay.io/parseablehq/parseable:v3.2.7@sha256:cdfb988a07662eb84a952e017639ef8c700c99d9a4b341ec8402402b88e53a68
+          imagePullPolicy: IfNotPresent
+          args: ["/usr/bin/parseable", "local-store"]
+          env:
+            - name: P_ADDR
+              value: 0.0.0.0:8000
+            - name: P_MODE
+              value: all
+            - name: P_FS_DIR
+              value: /parseable/data
+            - name: P_STAGING_DIR
+              value: /parseable/staging
+            - name: P_CHECK_UPDATE
+              value: "false"
+            - name: P_COLLECT_DATASET_STATS
+              value: "false"
+            - name: MAX_PERIODIC_LOCAL_SYNC_CYCLES
+              value: "1"
+            - name: RUST_LOG
+              value: warn
+            - name: P_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: parseable-auth
+                  key: PARSEABLE_USERNAME
+            - name: P_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: parseable-auth
+                  key: PARSEABLE_PASSWORD
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /api/v1/readiness
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "7"
+              memory: 24Gi
+          volumeMounts:
+            - name: parseable-data
+              mountPath: /parseable
+  volumeClaimTemplates:
+    - metadata:
+        name: parseable-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: logs-bench-premium-v2
+        resources:
+          requests:
+            storage: 500Gi

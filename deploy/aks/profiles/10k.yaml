@@ -1,0 +1,9 @@
+# 250 hosts x 40 apps = 10,000 logical (host, app) streams.
+writer:
+  rate: 150000
+  rampStep: 20000
+  rampInterval: 10m
+  rampMax: 510000
+  rampHold: 10m
+  hosts: 250
+  apps: 40

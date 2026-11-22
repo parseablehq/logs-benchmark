@@ -1,0 +1,72 @@
+alertmanager:
+  enabled: false
+vmalert:
+  enabled: false
+
+grafana:
+  enabled: true
+  nodeSelector:
+    workload: monitoring
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+  sidecar:
+    dashboards:
+      searchNamespace: ALL
+
+kube-state-metrics:
+  nodeSelector:
+    workload: monitoring
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+  metricLabelsAllowlist:
+    - pods=[logs-benchmark.victoriametrics.com/system]
+
+prometheus-node-exporter:
+  # It must run on all tainted benchmark nodes to expose disk and node metrics.
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
+
+victoria-metrics-operator:
+  nodeSelector:
+    workload: monitoring
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+
+syncJob:
+  nodeSelector:
+    workload: monitoring
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+
+vmagent:
+  spec:
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
+
+vmsingle:
+  spec:
+    nodeSelector:
+      workload: monitoring
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule

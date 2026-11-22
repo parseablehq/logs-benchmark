@@ -1,0 +1,51 @@
+image:
+  repository: REPLACE_WITH_ACR_LOGIN_SERVER/logs-benchmark
+  tag: aks
+  pullPolicy: IfNotPresent
+
+harness:
+  nodeSelector:
+    workload: harness
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: harness
+      effect: NoSchedule
+  envFrom:
+    - secretRef:
+        name: parseable-auth
+
+# Safety gate: the deployment is created but ingestion remains stopped until
+# it is explicitly scaled to one replica.
+writer:
+  replicas: 0
+  rate: 150000
+  rampStep: 20000
+  rampInterval: 10m
+  rampMax: 510000
+  rampHold: 10m
+  dropOnFull: true
+  buffer: 400000
+  startDelaySeconds: 180
+  batchLines: 2000
+  workers: 32
+  generators: 32
+  hosts: 125
+  apps: 40
+  seed: 1
+
+querier:
+  replicas: 1
+  interval: 0
+  timeout: 30s
+
+systems:
+  - name: parseable
+    type: parseable
+    addr: http://parseable.logs-bench-parseable.svc.cluster.local:8000
+  - name: loki
+    type: loki
+    addr: http://loki.logs-bench-loki.svc.cluster.local:3100
+  - name: victorialogs
+    type: victorialogs
+    addr: http://victorialogs-victoria-logs-single-server.logs-bench-victorialogs.svc.cluster.local:9428
