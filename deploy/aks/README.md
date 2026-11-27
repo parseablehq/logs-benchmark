@@ -15,9 +15,11 @@ Nothing is installed in the `default` namespace.
 | Harness | this repository's image | 1 × `Standard_D32ads_v7` |
 | Monitoring | VictoriaMetrics stack chart 0.91.2 | 1 × `Standard_D4ads_v7` |
 
-Each engine requests 7 CPU and 24 GiB without a resource limit. Each has its
-own 500 GiB Premium SSD v2 volume at 6,000 IOPS and 200 MB/s. The writer uses
-32 generator goroutines, 32 request workers per engine and 2,000-event batches.
+Each engine requests 7 CPU and 24 GiB without a resource limit. Loki and
+VictoriaLogs each use one 500 GiB Premium SSD v2 volume. The official Parseable
+chart creates separate 500 GiB staging and data volumes. Every volume is set to
+6,000 IOPS and 200 MB/s. The writer uses 32 generator goroutines, 32 request
+workers per engine and 2,000-event batches.
 
 The repository includes all three measured source-cardinality profiles:
 
@@ -89,13 +91,16 @@ az aks get-credentials -g "$RESOURCE_GROUP" -n "$AKS_CLUSTER" --overwrite-existi
 kubectl get nodes -L workload,kubernetes.azure.com/agentpool
 ```
 
-## 2. Build the benchmark writer
+## 2. Build the benchmark images
 
 The upstream public image does not contain this repository's Parseable
-adapter. Build this checkout in ACR:
+adapter. Build the writer and the small in-cluster run controller in ACR:
 
 ```sh
 az acr build --registry "$ACR_NAME" --image logs-benchmark:aks .
+az acr build --registry "$ACR_NAME" \
+  --file deploy/aks/controller.Dockerfile \
+  --image logs-benchmark-controller:aks .
 export ACR_LOGIN_SERVER="$(az acr show -n "$ACR_NAME" --query loginServer -o tsv)"
 ```
 
@@ -103,9 +108,10 @@ export ACR_LOGIN_SERVER="$(az acr show -n "$ACR_NAME" --query loginServer -o tsv
 
 ```sh
 kubectl apply -f deploy/aks/namespaces.yaml
-kubectl -n logs-bench-parseable create secret generic parseable-auth \
-  --from-literal=PARSEABLE_USERNAME="$PARSEABLE_USERNAME" \
-  --from-literal=PARSEABLE_PASSWORD="$PARSEABLE_PASSWORD"
+kubectl -n logs-bench-parseable create secret generic parseable-env-secret \
+  --from-literal=addr=0.0.0.0:8000 \
+  --from-literal=username="$PARSEABLE_USERNAME" \
+  --from-literal=password="$PARSEABLE_PASSWORD"
 kubectl -n logs-bench-harness create secret generic parseable-auth \
   --from-literal=PARSEABLE_USERNAME="$PARSEABLE_USERNAME" \
   --from-literal=PARSEABLE_PASSWORD="$PARSEABLE_PASSWORD" \
@@ -113,14 +119,19 @@ kubectl -n logs-bench-harness create secret generic parseable-auth \
 kubectl apply -f deploy/aks/storage-class.yaml
 ```
 
-## 4. Install all three systems
+## 4. Install all three systems with Helm
 
 ```sh
 helm repo add vm https://victoriametrics.github.io/helm-charts/
 helm repo add grafana-community https://grafana-community.github.io/helm-charts
+helm repo add parseable https://charts.parseable.com
 helm repo update
 
-kubectl apply -f deploy/aks/parseable.yaml
+helm upgrade --install parseable parseable/parseable \
+  --version 3.2.7 \
+  --namespace logs-bench-parseable \
+  --values deploy/aks/parseable-values.yaml \
+  --wait --timeout 10m
 helm upgrade --install loki grafana-community/loki \
   --version 18.15.1 --namespace logs-bench-loki \
   -f deploy/aks/loki-values.yaml
@@ -128,6 +139,9 @@ helm upgrade --install victorialogs vm/victoria-logs-single \
   --version 0.13.10 --namespace logs-bench-victorialogs \
   -f deploy/aks/victorialogs-values.yaml
 ```
+
+The Parseable override pins v3.2.7 and configures local storage, benchmark
+resources, conversion cadence and isolated node placement.
 
 Wait for the engine pods and verify that each landed on its dedicated node:
 
@@ -165,54 +179,66 @@ Open Grafana locally with:
 kubectl -n logs-bench-monitoring port-forward svc/monitoring-grafana 3000:80
 ```
 
-## 6. Start and observe the run
+## 6. Run three clean attempts for every profile
 
-Confirm readiness, then start exactly one writer:
+The controller runs this fixed order without requiring an attached terminal:
 
-```sh
-kubectl get pods -A -o wide
-kubectl -n logs-bench-harness scale deployment/writer --replicas=1
-kubectl -n logs-bench-harness logs -f deployment/writer
+```text
+5k-1, 5k-2, 5k-3, 10k-1, 10k-2, 10k-3, 15k-1, 15k-2, 15k-3
 ```
 
-Every profile starts at 150,000 events/s and stops increasing at 510,000
-events/s; its step size is shown above. One deterministic event is generated
-and fanned out to all three systems. `dropOnFull: true` prevents a slow engine
-from throttling the others. Stop the run at any time with:
+Every attempt is independent. The controller stops the load and all three
+engines, waits for their pods to terminate, deletes and verifies all three
+benchmark PVCs, starts the engines on new PVCs, and records a 10-minute idle
+baseline. It then runs 150k/s through 510k/s in 20k/s steps held for 10 minutes
+each and retains five minutes of settled metrics before the next cleanup. One
+deterministic event is fanned out to all systems; `dropOnFull: true` prevents a
+slow engine from throttling the others.
+
+This operation intentionally deletes all existing benchmark data in the three
+engine namespaces. Launch the controller after replacing the image placeholder:
 
 ```sh
-kubectl -n logs-bench-harness scale deployment/writer --replicas=0
+sed "s|REPLACE_WITH_ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" \
+  deploy/aks/run-nine-attempts.yaml | kubectl apply -f -
 ```
 
-## 7. Reset for a clean run
-
-Stop the writer before deleting data. These namespaces contain only benchmark
-data, so deleting every PVC in them resets all three systems:
+The full sequence takes roughly 31 hours plus pod and disk provisioning time.
+It stores timestamps, progress and outcomes in a ConfigMap and leaves monitoring
+running after scaling the writer, querier and engines to zero:
 
 ```sh
-kubectl -n logs-bench-harness scale deployment/writer --replicas=0
-kubectl delete -f deploy/aks/parseable.yaml
-helm uninstall loki -n logs-bench-loki
-helm uninstall victorialogs -n logs-bench-victorialogs
-kubectl delete pvc --all -n logs-bench-parseable
-kubectl delete pvc --all -n logs-bench-loki
-kubectl delete pvc --all -n logs-bench-victorialogs
+kubectl -n logs-bench-monitoring logs -f job/benchmark-nine-run-controller
+kubectl -n logs-bench-monitoring get configmap benchmark-nine-run-state -o yaml
 ```
 
-Repeat section 4, wait until CPU, memory and disk I/O settle at their idle
-baseline, then repeat section 6. Reinstall the harness using section 5 when
-changing the image or cardinality profile.
+On failure or interruption, the controller stops the load but leaves the engine
+pods and their current data available for diagnosis. To start a new complete
+nine-run sequence, delete only the completed/failed controller Job and apply the
+manifest again:
 
-## 8. Teardown
+```sh
+kubectl -n logs-bench-monitoring delete job benchmark-nine-run-controller \
+  --ignore-not-found
+sed "s|REPLACE_WITH_ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" \
+  deploy/aks/run-nine-attempts.yaml | kubectl apply -f -
+```
+
+For a single manual run, scale `deployment/writer` to one. Stop it by scaling it
+back to zero. The installed 5k profile is the manual-run default.
+
+## 7. Teardown
 
 Remove benchmark workloads but retain the AKS cluster:
 
 ```sh
+sed "s|REPLACE_WITH_ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" \
+  deploy/aks/run-nine-attempts.yaml | kubectl delete -f - --ignore-not-found
 kubectl -n logs-bench-harness scale deployment/writer --replicas=0
 helm uninstall bench -n logs-bench-harness
 kubectl delete -f deploy/aks/benchmark-scrape.yaml --ignore-not-found
 helm uninstall monitoring -n logs-bench-monitoring
-kubectl delete -f deploy/aks/parseable.yaml --ignore-not-found
+helm uninstall parseable -n logs-bench-parseable --ignore-not-found
 helm uninstall loki -n logs-bench-loki --ignore-not-found
 helm uninstall victorialogs -n logs-bench-victorialogs --ignore-not-found
 kubectl delete -f deploy/aks/namespaces.yaml

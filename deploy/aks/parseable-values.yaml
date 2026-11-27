@@ -1,0 +1,49 @@
+parseable:
+  deploymentMode: standalone
+
+  image:
+    repository: quay.io/parseablehq/parseable
+    tag: v3.2.7@sha256:cdfb988a07662eb84a952e017639ef8c700c99d9a4b341ec8402402b88e53a68
+    pullPolicy: IfNotPresent
+
+  store:
+    type: local-store
+    secretName: parseable-env-secret
+
+  standalone:
+    unified:
+      env:
+        RUST_LOG: warn
+        P_CHECK_UPDATE: "false"
+        P_COLLECT_DATASET_STATS: "false"
+        MAX_PERIODIC_LOCAL_SYNC_CYCLES: "1"
+      resources:
+        limits: null
+        requests:
+          cpu: "7"
+          memory: 24Gi
+      service:
+        type: ClusterIP
+        port: 8000
+      persistence:
+        staging:
+          enabled: true
+          storageClass: logs-bench-premium-v2
+          accessMode: ReadWriteOnce
+          size: 500Gi
+        data:
+          enabled: true
+          storageClass: logs-bench-premium-v2
+          accessMode: ReadWriteOnce
+          size: 500Gi
+      podLabels:
+        logs-benchmark.victoriametrics.com/system: parseable
+      nodeSelector:
+        workload: parseable
+      tolerations:
+        - key: workload
+          operator: Equal
+          value: parseable
+          effect: NoSchedule
+      terminationGracePeriodSeconds: 120
+

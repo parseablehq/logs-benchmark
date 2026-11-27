@@ -617,7 +617,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (kube_pod_container_status_restarts_total{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"} * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (kube_pod_container_status_restarts_total{namespace=~\"logs-bench-(parseable|loki|victorialogs)\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -1855,7 +1855,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (rate(container_cpu_usage_seconds_total{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", container!=\"\", metrics_path=\"/metrics/resource\"}[$__rate_interval])) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container!=\"\", container!=\"POD\", metrics_path=\"/metrics/cadvisor\"}[$__rate_interval])), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -1987,7 +1987,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (container_memory_rss{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"}) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (container_memory_rss{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -2119,7 +2119,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (kubelet_volume_stats_used_bytes{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"} * on(namespace,persistentvolumeclaim) group_left(pod) kube_pod_spec_volumes_persistentvolumeclaims_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"} * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (kubelet_volume_stats_used_bytes{namespace=~\"logs-bench-(parseable|loki|victorialogs)\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -2251,7 +2251,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (rate(container_fs_writes_bytes_total{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}[$__rate_interval])) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (rate(container_fs_writes_bytes_total{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container=\"\", image=\"\"}[$__rate_interval])), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -2383,7 +2383,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (rate(container_fs_reads_bytes_total{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}[$__rate_interval])) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+          "expr": "label_replace(sum by (namespace) (rate(container_fs_reads_bytes_total{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container=\"\", image=\"\"}[$__rate_interval])), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -2521,7 +2521,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (kubelet_volume_stats_used_bytes{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"} * on(namespace,persistentvolumeclaim) group_left(pod) kube_pod_spec_volumes_persistentvolumeclaims_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"} * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\"))) / on(label_logs_benchmark_victoriametrics_com_system) (sum by (label_logs_benchmark_victoriametrics_com_system) (label_replace(logbench_stored_rows, \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"system\", \"(.+)\")) or sum by (label_logs_benchmark_victoriametrics_com_system) (label_replace(logbench_lines_sent_total, \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"system\", \"(.+)\"))) * 1e6",
+          "expr": "label_replace(sum by (namespace) (kubelet_volume_stats_used_bytes{namespace=~\"logs-bench-(parseable|loki|victorialogs)\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\") / on(label_logs_benchmark_victoriametrics_com_system) (sum by (label_logs_benchmark_victoriametrics_com_system) (label_replace(logbench_stored_rows, \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"system\", \"(.+)\")) or sum by (label_logs_benchmark_victoriametrics_com_system) (label_replace(logbench_lines_sent_total, \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"system\", \"(.+)\"))) * 1e6",
           "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
         }
       ],
@@ -3073,7 +3073,7 @@
           },
           "targets": [
             {
-              "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (container_memory_working_set_bytes{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", container!=\"\", metrics_path=\"/metrics/resource\"}) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+              "expr": "label_replace(sum by (namespace) (container_memory_working_set_bytes{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container!=\"\", container!=\"POD\", metrics_path=\"/metrics/cadvisor\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
               "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
             }
           ],
@@ -3205,7 +3205,7 @@
           },
           "targets": [
             {
-              "expr": "sum by (label_logs_benchmark_victoriametrics_com_system) (sum by (namespace,pod) (container_memory_rss{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"} + container_memory_mapped_file{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"}) * on(namespace,pod) group_left(label_logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,label_logs_benchmark_victoriametrics_com_system) (kube_pod_labels{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\", label_logs_benchmark_victoriametrics_com_system!=\"\"}) or on(namespace,pod) label_replace(group by (namespace,pod,logs_benchmark_victoriametrics_com_system) (group by (namespace,pod,node) (kube_pod_info{namespace=~\"logs-bench.*\", namespace!=\"logs-bench-monitoring\"}) * on(node) group_left(logs_benchmark_victoriametrics_com_system) group by (node,logs_benchmark_victoriametrics_com_system) (machine_cpu_cores{logs_benchmark_victoriametrics_com_system!=\"\"})), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"logs_benchmark_victoriametrics_com_system\", \"(.+)\")))",
+              "expr": "label_replace(sum by (namespace) (container_memory_rss{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"} + container_memory_mapped_file{namespace=~\"logs-bench-(parseable|loki|victorialogs)\", container=\"\", image=\"\", metrics_path=\"/metrics/cadvisor\"}), \"label_logs_benchmark_victoriametrics_com_system\", \"$1\", \"namespace\", \"logs-bench-(.+)\")",
               "legendFormat": "{{label_logs_benchmark_victoriametrics_com_system}}"
             }
           ],

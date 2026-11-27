@@ -42,7 +42,7 @@ querier:
 systems:
   - name: parseable
     type: parseable
-    addr: http://parseable.logs-bench-parseable.svc.cluster.local:8000
+    addr: http://parseable-standalone-service.logs-bench-parseable.svc.cluster.local:8000
   - name: loki
     type: loki
     addr: http://loki.logs-bench-loki.svc.cluster.local:3100

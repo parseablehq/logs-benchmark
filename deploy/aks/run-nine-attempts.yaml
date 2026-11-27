@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-monitoring
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: benchmark-nine-run-controller
+subjects:
+  - kind: ServiceAccount
+    name: benchmark-nine-run-controller
+    namespace: logs-bench-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-harness
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    resourceNames: ["writer", "querier"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-harness
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: benchmark-nine-run-controller
+subjects:
+  - kind: ServiceAccount
+    name: benchmark-nine-run-controller
+    namespace: logs-bench-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-parseable
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    resourceNames:
+      - stage-volume-parseable-standalone-0
+      - data-volume-parseable-standalone-0
+    verbs: ["get", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "statefulsets/scale"]
+    resourceNames: ["parseable-standalone"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-parseable
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: benchmark-nine-run-controller
+subjects:
+  - kind: ServiceAccount
+    name: benchmark-nine-run-controller
+    namespace: logs-bench-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-loki
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    resourceNames: ["storage-loki-0"]
+    verbs: ["get", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "statefulsets/scale"]
+    resourceNames: ["loki"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-loki
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: benchmark-nine-run-controller
+subjects:
+  - kind: ServiceAccount
+    name: benchmark-nine-run-controller
+    namespace: logs-bench-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-victorialogs
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    resourceNames:
+      - server-volume-victorialogs-victoria-logs-single-server-0
+    verbs: ["get", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "statefulsets/scale"]
+    resourceNames: ["victorialogs-victoria-logs-single-server"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-victorialogs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: benchmark-nine-run-controller
+subjects:
+  - kind: ServiceAccount
+    name: benchmark-nine-run-controller
+    namespace: logs-bench-monitoring
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: benchmark-nine-run-controller
+  namespace: logs-bench-monitoring
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 144000
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: benchmark-nine-run-controller
+    spec:
+      restartPolicy: Never
+      serviceAccountName: benchmark-nine-run-controller
+      containers:
+        - name: controller
+          image: REPLACE_WITH_ACR_LOGIN_SERVER/logs-benchmark-controller:aks
+          imagePullPolicy: Always
+          env:
+            - name: RUN_SECONDS
+              value: "11400"
+            - name: BASELINE_SECONDS
+              value: "600"
+            - name: SETTLE_SECONDS
+              value: "300"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+

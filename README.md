@@ -30,8 +30,11 @@ GKE result snapshots are intentionally not included.
 
 The generator sends 2,000 events per request. Ready-made profiles cover 5,000,
 10,000 and 15,000 logical streams, all starting at 150,000 events/s with the
-ramp schedules used in the AKS exercise. Each system uses a dedicated 500 GiB
-Premium SSD v2 volume configured for 6,000 IOPS and 200 MB/s. Nothing is
+ramp schedules used in the AKS exercise. The included controller executes three
+fully clean attempts for every profile, deleting and recreating every engine
+disk before each attempt. Loki and VictoriaLogs use one 500 GiB Premium SSD v2
+volume each; the official Parseable chart uses separate 500 GiB staging and data
+volumes. Every volume is configured for 6,000 IOPS and 200 MB/s. Nothing is
 installed in the `default` namespace.
 
 See [the AKS runbook](deploy/aks/README.md) for deployment and cleanup.
